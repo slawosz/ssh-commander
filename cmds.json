@@ -1,0 +1,14 @@
+[
+  {
+    "Command": "ls / | wc -l",
+    "Host": "127.0.0.1:2222"
+  },
+  {
+    "Command": "whoami",
+    "Host": "127.0.0.1:2222"
+  },
+  {
+    "Command": "whoami",
+    "Host": "localhost:2200"
+  }
+]
