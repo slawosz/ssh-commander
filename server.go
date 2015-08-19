@@ -115,6 +115,34 @@ func handleChannel(newChannel ssh.NewChannel) {
 	bash := exec.Command("bash")
 
 	// Prepare teardown function
+	closeFunc := func() {
+		connection.Close()
+		_, err := bash.Process.Wait()
+		if err != nil {
+			log.Printf("Failed to exit bash (%s)", err)
+		}
+		log.Printf("Session closed")
+	}
+
+	// Allocate a terminal for this channel
+	log.Print("Creating pty...")
+	bashf, err := pty.Start(bash)
+	if err != nil {
+		log.Printf("Could not start pty (%s)", err)
+		closeFunc()
+		return
+	}
+
+	//pipe session to bash and visa-versa
+	var once sync.Once
+	go func() {
+		io.Copy(connection, bashf)
+		once.Do(closeFunc)
+	}()
+	go func() {
+		io.Copy(bashf, connection)
+		once.Do(closeFunc)
+	}()
 
 	// Sessions have out-of-band requests such as "shell", "pty-req" and "env"
 	go func() {
@@ -128,51 +156,27 @@ func handleChannel(newChannel ssh.NewChannel) {
 				if len(req.Payload) == 0 {
 					req.Reply(true, nil)
 				}
-				closeFunc := func() {
-					connection.Close()
-					_, err := bash.Process.Wait()
-					if err != nil {
-						log.Printf("Failed to exit bash (%s)", err)
-					}
-					log.Printf("Session closed")
-				}
-
-				// Allocate a terminal for this channel
-				log.Print("Creating pty...")
-				bashf, err := pty.Start(bash)
-				if err != nil {
-					log.Printf("Could not start pty (%s)", err)
-					closeFunc()
-					return
-				}
-
-				//pipe session to bash and visa-versa
-				var once sync.Once
-				go func() {
-					io.Copy(connection, bashf)
-					once.Do(closeFunc)
-				}()
-				go func() {
-					io.Copy(bashf, connection)
-					once.Do(closeFunc)
-				}()
 			case "exec":
-				//bash := exec.Command("bash")
+				cmd := exec.Command(string(req.Payload[4:]))
 				// req.Reply(true, []byte("hello to the future"))
-				connection.Write([]byte("hello there"))
+				var res []byte
+				res, err := cmd.Output()
+				if err != nil {
+					connection.Write([]byte(fmt.Sprintf("%v", err)))
+				}
+				connection.Write(res)
+				req.Reply(true, nil)
 				connection.Close()
-				/*
-					case "pty-req":
-						termLen := req.Payload[3]
-						w, h := parseDims(req.Payload[termLen+4:])
-						SetWinsize(bashf.Fd(), w, h)
-						// Responding true (OK) here will let the client
-						// know we have a pty ready for input
-						req.Reply(true, nil)
-					case "window-change":
-						w, h := parseDims(req.Payload)
-						SetWinsize(bashf.Fd(), w, h)
-				*/
+			case "pty-req":
+				termLen := req.Payload[3]
+				w, h := parseDims(req.Payload[termLen+4:])
+				SetWinsize(bashf.Fd(), w, h)
+				// Responding true (OK) here will let the client
+				// know we have a pty ready for input
+				req.Reply(true, nil)
+			case "window-change":
+				w, h := parseDims(req.Payload)
+				SetWinsize(bashf.Fd(), w, h)
 			}
 		}
 	}()

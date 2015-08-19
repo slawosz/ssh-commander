@@ -91,10 +91,11 @@ func executeCmd(cmd, hostname string, config *ssh.ClientConfig) string {
 
 	var stdoutBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
-	err = session.Run(cmd)
+	err = session.Start(cmd)
 	if err != nil {
 		fmt.Printf("Session failed with error: %v\n", err)
 	}
+	session.Wait()
 	fmt.Printf("DONE: %v on %v\n", cmd, hostname)
 
 	return hostname + ": " + stdoutBuf.String()
