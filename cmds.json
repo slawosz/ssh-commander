@@ -1,14 +1,10 @@
 [
   {
-    "Command": "ls / | wc -l",
-    "Host": "127.0.0.1:2222"
-  },
-  {
-    "Command": "whoami",
-    "Host": "127.0.0.1:2222"
-  },
-  {
-    "Command": "whoami",
-    "Host": "localhost:2200"
+    "Command": "ls -l / | wc -l",
+    "Host": "localhost",
+    "Port": "2222",
+    "User": "vagrant",
+    "Password": "vagrant",
+    "JID": "JOB-bla-bla"
   }
 ]

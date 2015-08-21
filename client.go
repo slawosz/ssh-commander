@@ -47,16 +47,11 @@ func main() {
 	flag.Parse()
 	results := make(chan string, 10)
 	timeout := time.After(65 * time.Second)
-	config := &ssh.ClientConfig{
-		User: "vagrant",
-		Auth: []ssh.AuthMethod{ssh.Password("vagrant")},
-	}
-
 	cmds := ParseCommands(*cmdsfile)
 
 	for _, cmd := range cmds {
 		go func(command *Cmd) {
-			results <- executeCmd(command.Command, command.Host, config)
+			results <- executeCmd(command.Command, command.Host)
 		}(cmd)
 	}
 
@@ -71,13 +66,18 @@ func main() {
 	}
 }
 
-func executeCmd(cmd, hostname string, config *ssh.ClientConfig) string {
+func executeCmd(cmd, hostname string) string {
 	// return fmt.Sprintf("executing %v on %v\n", cmd, hostname)
+	config := &ssh.ClientConfig{
+		User:   "bob",
+		Auth:   []ssh.AuthMethod{ssh.Password("bob2")},
+		Config: ssh.Config{Ciphers: []string{"aes192-ctr"}},
+	}
+
 	fmt.Printf("executing %v on %v\n", cmd, hostname)
 	conn, err := ssh.Dial("tcp", hostname, config)
-	if err != err {
+	if err != nil {
 		fmt.Println(err)
-		panic(err)
 	}
 	if conn == nil {
 		fmt.Printf("Connection to %v failed\n", hostname)
