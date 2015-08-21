@@ -41,12 +41,15 @@ func (w *SshWorker) Work(payload *WorkerPayload) *HostResult {
 	}
 	err = session.Wait()
 	if err != nil {
-		return w.handleError(payload, "wait for remote command execution failed", err)
+		// fmt.Println(stdoutBuf.String())
+		// return w.handleError(payload, "wait for remote command execution failed", err)
+		// TODO: distinguish between error
+		return &HostResult{stdoutBuf.String(), payload.Host.Host, payload.Port, "-1"}
 	}
 
-	return &HostResult{stdoutBuf.String(), payload.Host.Host, payload.Port}
+	return &HostResult{stdoutBuf.String(), payload.Host.Host, payload.Port, "0"}
 }
 
 func (w *SshWorker) handleError(payload *WorkerPayload, msg string, err error) *HostResult {
-	return &HostResult{fmt.Sprintf("Execution on host FAILED \"%v\" with error \"%v\"", msg, err), payload.Host.Host, payload.Port}
+	return &HostResult{fmt.Sprintf("Execution on host FAILED \"%v\" with error \"%v\"", msg, err), payload.Host.Host, payload.Port, "-1"}
 }

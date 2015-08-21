@@ -33,6 +33,7 @@ type HostResult struct {
 	Payload string
 	Host    string
 	Port    string
+	Status  string
 }
 
 type HostsResult struct {
