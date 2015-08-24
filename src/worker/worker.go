@@ -7,6 +7,13 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+var supportedCiphers = []string{
+	"aes128-ctr", "aes192-ctr", "aes256-ctr",
+	"aes128-gcm@openssh.com",
+	"arcfour256", "arcfour128",
+	"aes128-cbc",
+}
+
 type SshWorker struct{}
 
 func NewWorker() *SshWorker {
@@ -16,9 +23,9 @@ func NewWorker() *SshWorker {
 func (w *SshWorker) Work(payload *WorkerPayload) *HostResult {
 	// return fmt.Sprintf("executing %v on %v\n", cmd, hostname)
 	config := &ssh.ClientConfig{
-		User: payload.User,
-		Auth: []ssh.AuthMethod{ssh.Password(payload.Password)},
-		//Config: ssh.Config{Ciphers: []string{"aes192-ctr"}},
+		User:   payload.User,
+		Auth:   []ssh.AuthMethod{ssh.Password(payload.Password)},
+		Config: ssh.Config{Ciphers: supportedCiphers},
 	}
 
 	fmt.Printf("executing %v on %v:%v\n", payload.Command, payload.Host, payload.Port)
