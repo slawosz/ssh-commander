@@ -15,7 +15,7 @@ import (
 
 // debugMux, if set, causes messages in the connection protocol to be
 // logged.
-const debugMux = false
+const debugMux = true
 
 // chanList is a thread safe channel list.
 type chanList struct {
@@ -320,6 +320,7 @@ func (m *mux) handleChannelOpen(packet []byte) error {
 	return nil
 }
 
+// this may be called on client since this is composed into client
 func (m *mux) OpenChannel(chanType string, extra []byte) (Channel, <-chan *Request, error) {
 	ch, err := m.openChannel(chanType, extra)
 	if err != nil {

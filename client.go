@@ -75,15 +75,15 @@ func executeCmd(cmd, hostname string) string {
 	}
 
 	fmt.Printf("executing %v on %v\n", cmd, hostname)
-	conn, err := ssh.Dial("tcp", hostname, config)
+	client, err := ssh.Dial("tcp", hostname, config)
 	if err != nil {
 		fmt.Println(err)
 	}
-	if conn == nil {
+	if client == nil {
 		fmt.Printf("Connection to %v failed\n", hostname)
 		return ""
 	}
-	session, err := conn.NewSession()
+	session, err := client.NewSession()
 	if err != err {
 		panic(err)
 	}

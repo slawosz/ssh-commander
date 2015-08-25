@@ -398,9 +398,11 @@ func (s *Session) wait(reqs <-chan *Request) error {
 	wm := Waitmsg{status: -1}
 	// Wait for msg channel to be closed before returning.
 	for msg := range reqs {
+		fmt.Println("fooo bar")
 		switch msg.Type {
 		case "exit-status":
 			d := msg.Payload
+
 			wm.status = int(d[0])<<24 | int(d[1])<<16 | int(d[2])<<8 | int(d[3])
 		case "exit-signal":
 			var sigval struct {

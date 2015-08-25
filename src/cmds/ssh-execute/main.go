@@ -16,7 +16,7 @@ var timeout = flag.Int("timeout", 5, "command timeout")
 func main() {
 	flag.Parse()
 
-	w := worker.NewWorker()
+	w := worker.NewCmdWorker()
 	payload := prepareWorkerPayload()
 	res := w.Work(payload)
 	fmt.Printf("Result:\n%+v\n", res)
