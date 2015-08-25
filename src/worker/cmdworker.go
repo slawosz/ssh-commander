@@ -12,9 +12,9 @@ func NewCmdWorker() *CmdWorker {
 	return &CmdWorker{}
 }
 
-func (w *CmdWorker) Work(payload *WorkerPayload) *HostResult {
-	cmd := exec.Command("/bin/sh", "ssh2.sh")
-	fmt.Printf("%+v\n", cmd)
+func (w *CmdWorker) Work(p *WorkerPayload) *HostResult {
+	//script := fmt.Sprintf("%v %v %v %v %v %v", p.Script, p.Port, p.User, p.Host.Host, p.Command, p.Password)
+	cmd := exec.Command("/bin/sh", p.Script)
 	var out bytes.Buffer
 	var errbuf bytes.Buffer
 	cmd.Stdout = &out
@@ -31,5 +31,5 @@ func (w *CmdWorker) Work(payload *WorkerPayload) *HostResult {
 	//fmt.Println("=====")
 	//fmt.Println("=====")
 
-	return &HostResult{out.String(), payload.Host.Host, payload.Port, "0"}
+	return &HostResult{out.String(), p.Host.Host, p.Port, "0"}
 }

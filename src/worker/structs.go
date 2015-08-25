@@ -27,6 +27,7 @@ type JobPayload struct {
 type WorkerPayload struct {
 	*Host
 	Command string
+	Script  string
 }
 
 type HostResult struct {
