@@ -11,12 +11,12 @@ type Scheduler struct {
 	worker  Worker
 }
 
-func NewScheduler(w Worker, pool int) *Scheduler {
+func NewScheduler(w Worker, in chan *JobPayload, pool int) *Scheduler {
 	return &Scheduler{
-		chanin:  make(chan *JobPayload),
+		chanin:  in,
 		chanout: make(chan *HostsResult),
 		pool:    pool, // TODO: add in config
-		worker:  NewWorker(),
+		worker:  w,
 	}
 }
 
@@ -27,13 +27,13 @@ func (s *Scheduler) Start() {
 		go func(j *JobPayload) {
 			wg := &sync.WaitGroup{}
 			// it could be an array, but thanks to fact its a chanel, we don't need to use mutex
-			workerResults := make(chan *HostResult)
+			workerResults := make(chan *HostResult, len(j.Hosts))
 			// map
 			for _, hostPayload := range j.Hosts {
+				wg.Add(1)
 				limiter <- true // blocks when limiter chan buffer is full
 				go func(hostPayload *Host) {
-					wg.Add(1)
-					w := &WorkerPayload{Host: hostPayload, Command: j.Command}
+					w := &WorkerPayload{Host: hostPayload, Command: j.Command, Script: j.Script}
 					res := s.worker.Work(w)
 					workerResults <- res
 					<-limiter //release place in channel

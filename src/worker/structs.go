@@ -19,6 +19,7 @@ type Host struct {
 
 type JobPayload struct {
 	Hosts   []*Host
+	Script  string
 	Command string
 	JID     string
 	Timeout int

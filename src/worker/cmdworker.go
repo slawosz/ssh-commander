@@ -20,10 +20,6 @@ func (w *CmdWorker) Work(p *WorkerPayload) *HostResult {
 		fmt.Sprintf("COMMAND=%v", p.Command),
 		fmt.Sprintf("PASSWORD=%v", p.Password),
 	}
-	//var out bytes.Buffer
-	//var errbuf bytes.Buffer
-	//cmd.Stdout = &out
-	//cmd.Stderr = &errbuf
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("error in output:")
