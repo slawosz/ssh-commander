@@ -11,7 +11,7 @@ var port = flag.String("port", "2222", "port to connect")
 var user = flag.String("user", "vagrant", "user")
 var password = flag.String("password", "vagrant", "password")
 var command = flag.String("command", "uname -a", "command to run")
-var shell = flag.String("shell", "ssh.sh", "script to run")
+var script = flag.String("script", "ssh.sh", "script to run")
 var timeout = flag.Int("timeout", 5, "command timeout")
 
 func main() {
@@ -32,5 +32,6 @@ func prepareWorkerPayload() *worker.WorkerPayload {
 			Password: *password,
 		},
 		Command: *command,
+		Script:  *script,
 	}
 }

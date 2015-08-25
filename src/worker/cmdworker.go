@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"bytes"
 	"fmt"
 	"os/exec"
 )
@@ -13,16 +12,32 @@ func NewCmdWorker() *CmdWorker {
 }
 
 func (w *CmdWorker) Work(p *WorkerPayload) *HostResult {
-	//script := fmt.Sprintf("%v %v %v %v %v %v", p.Script, p.Port, p.User, p.Host.Host, p.Command, p.Password)
 	cmd := exec.Command("/bin/sh", p.Script)
-	var out bytes.Buffer
-	var errbuf bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &errbuf
-	err := cmd.Run()
+	cmd.Env = []string{
+		fmt.Sprintf("PORT=%v", p.Port),
+		fmt.Sprintf("USER=%v", p.User),
+		fmt.Sprintf("HOST=%v", p.Host.Host),
+		fmt.Sprintf("COMMAND=%v", p.Command),
+		fmt.Sprintf("PASSWORD=%v", p.Password),
+	}
+	//var out bytes.Buffer
+	//var errbuf bytes.Buffer
+	//cmd.Stdout = &out
+	//cmd.Stderr = &errbuf
+	output, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("error:")
+		fmt.Println("error in output:")
 		fmt.Println(err)
+	}
+	err = cmd.Run()
+	if err != nil {
+		switch err.(type) {
+		case *exec.ExitError:
+			//fmt.Println("exit error")
+		default:
+			//fmt.Println("error in run:")
+			//fmt.Println(err)
+		}
 	}
 	//fmt.Println("=====")
 	//fmt.Println(out.String())
@@ -31,5 +46,5 @@ func (w *CmdWorker) Work(p *WorkerPayload) *HostResult {
 	//fmt.Println("=====")
 	//fmt.Println("=====")
 
-	return &HostResult{out.String(), p.Host.Host, p.Port, "0"}
+	return &HostResult{string(output), p.Host.Host, p.Port, "0"}
 }
