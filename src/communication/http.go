@@ -1,5 +1,7 @@
 package communication
 
+/*
+
 import (
 	"bytes"
 	"encoding/json"
@@ -89,3 +91,4 @@ func (c *HttpCommunication) sendBackResults(res *worker.HostsResult) {
 	delete(c.jobs, res.JID)
 	c.Unlock()
 }
+*/
