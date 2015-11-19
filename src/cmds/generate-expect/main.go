@@ -1,16 +1,20 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
-	"os/exec"
+	"io"
+	"os"
+	"strings"
+	exec "utils"
 )
 
 var commands = flag.String("commands", "ls", "commands to execute")
 
 func main() {
 	flag.Parse()
-	cmd := exec.Command("/usr/bin/wc", "-l")
+	cmd := exec.Command("/usr/bin/expect")
 	cmd.Env = []string{
 		fmt.Sprintf("PASS=%v", "vagrant"),
 	}
@@ -19,14 +23,15 @@ func main() {
 	if err != nil {
 		fmt.Println("error in input pipe: ", err)
 	}
-	for _, line := range generateScript(*commands) {
-		in.Write(line)
-	}
-	output, err := cmd.CombinedOutput()
+	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		fmt.Printf("error in output:")
-		fmt.Println(err)
+		fmt.Println("error in output pipe: ", err)
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		fmt.Println("error in output pipe: ", err)
+	}
+	err = cmd.Start()
 	if err != nil {
 		switch err.(type) {
 		case *exec.ExitError:
@@ -36,7 +41,16 @@ func main() {
 			fmt.Println(err)
 		}
 	}
+	for _, line := range generateScript(*commands) {
+		io.Copy(in, bytes.NewBuffer(line))
+	}
 	in.Close()
+	if err != nil {
+		fmt.Printf("error in output:")
+		fmt.Println(err)
+	}
+	io.Copy(os.Stdout, stdout)
+	io.Copy(os.Stdout, stderr)
 	err = cmd.Wait()
 	if err != nil {
 		switch err.(type) {
@@ -47,19 +61,25 @@ func main() {
 			fmt.Println(err)
 		}
 	}
-	fmt.Println(output)
 }
 
+// TODO: it should be possible to generate expect for debug
 func generateScript(cstr string) [][]byte {
+	cmdsStr := strings.Split(cstr, ",")
 	cmds := [][]byte{
-		[]byte("set timeout 10"),
-		[]byte("spawn ssh -StrictHostKeyChecking=no -p 2222 vagrant@localhost"),
-		[]byte("expect \"*?assword: \""),
-		[]byte("send -- \"$env(PASS)\r\""),
-		[]byte("expect \"*?$ \""),
-		[]byte("send -- \"ls\r\""),
-		[]byte("expect \"*?$ \""),
+		[]byte("set timeout 10\n"),
+		[]byte("spawn ssh -StrictHostKeyChecking=no -p 2222 vagrant@localhost\n"),
+		[]byte("expect \"*?assword: \"\n"),
+		[]byte("send -- \"$env(PASS)\r\"\n"),
+		[]byte("expect \"*?$ \"\n"),
+		[]byte("send -- \"ls\r\"\n"),
 	}
+	for _, cmd := range cmdsStr {
+		cmds = append(cmds, []byte(fmt.Sprintf("send -- \"%v\r\"\n", cmd)))
+		cmds = append(cmds, []byte("expect \"*?$ \"\n"))
+	}
+	end := []byte("expect \"*?$ \"\n")
+	cmds = append(cmds, end)
 
 	return cmds
 }
