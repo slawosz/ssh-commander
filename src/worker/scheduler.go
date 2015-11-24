@@ -33,7 +33,7 @@ func (s *Scheduler) Start() {
 				wg.Add(1)
 				limiter <- true // blocks when limiter chan buffer is full
 				go func(hostPayload *Host) {
-					w := &WorkerPayload{Host: hostPayload, Command: j.Command, Script: j.Script}
+					w := &WorkerPayload{Host: hostPayload, Commands: j.Command, Script: j.Script}
 					res := s.worker.Work(w)
 					workerResults <- res
 					<-limiter //release place in channel

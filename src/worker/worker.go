@@ -28,7 +28,7 @@ func (w *SshWorker) Work(payload *WorkerPayload) *HostResult {
 		Config: ssh.Config{Ciphers: supportedCiphers},
 	}
 
-	fmt.Printf("executing %v on %v:%v\n", payload.Command, payload.Host, payload.Port)
+	fmt.Printf("executing %v on %v:%v\n", payload.Commands, payload.Host, payload.Port)
 	conn, err := ssh.Dial("tcp", fmt.Sprintf("%v:%v", payload.Host.Host, payload.Port), config)
 	if err != nil {
 		msg := fmt.Sprintf("Connection to %v:%v failed", payload.Host, payload.Port)
@@ -42,7 +42,7 @@ func (w *SshWorker) Work(payload *WorkerPayload) *HostResult {
 
 	var stdoutBuf bytes.Buffer
 	session.Stdout = &stdoutBuf
-	err = session.Start(payload.Command)
+	err = session.Start(payload.Commands)
 	if err != nil {
 		return w.handleError(payload, "remote command execution failed", err)
 	}
