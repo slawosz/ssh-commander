@@ -5,24 +5,22 @@ import (
 )
 
 type JobScheduler interface {
-	Start(pool int)
-	PushJob(*JobPayload)
-	ResultsChan() chan *HostsResult
+	Start()
+	PushJob(*SchedulerPayload)
 }
 
 type Scheduler struct {
-	chanin  chan []*Host
-	chanout chan *HostsResult
-	worker  Worker
-	pool    int
+	chanin chan *SchedulerPayload
+	worker Worker
+	pool   int
 }
 
-func NewScheduler(w Worker, in chan []*Host, pool int) *Scheduler {
+func NewScheduler(w Worker, pool int) *Scheduler {
+	in := make(chan *SchedulerPayload)
 	return &Scheduler{
-		chanin:  in,
-		chanout: make(chan *HostsResult),
-		worker:  w,
-		pool:    pool,
+		chanin: in,
+		worker: w,
+		pool:   pool,
 	}
 }
 
@@ -30,13 +28,12 @@ func (s *Scheduler) Start() {
 	limiter := make(chan bool, s.pool)
 
 	for job := range s.chanin {
-
-		go func(j []*Host) {
+		go func(j *SchedulerPayload) {
 			// waitGroup is to wait until all hosts will do their job
 			wg := &sync.WaitGroup{}
-			workerResults := make(chan *HostResult, len(j))
+			workerResults := make(chan *HostResult, len(j.Hosts))
 
-			for _, hostPayload := range j {
+			for _, hostPayload := range j.Hosts {
 				wg.Add(1)
 				limiter <- true // blocks when limiter chan buffer is full
 
@@ -57,18 +54,11 @@ func (s *Scheduler) Start() {
 				hostsResult = append(hostsResult, r)
 			}
 
-			res := &HostsResult{
-				HostsResult: hostsResult,
-			}
-			s.chanout <- res
+			j.ResultsChan <- hostsResult
 		}(job)
 	}
 }
 
-func (s *Scheduler) PushJob(j []*Host) {
+func (s *Scheduler) PushJob(j *SchedulerPayload) {
 	s.chanin <- j
-}
-
-func (s *Scheduler) ResultsChan() chan *HostsResult {
-	return s.chanout
 }

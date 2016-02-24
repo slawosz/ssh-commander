@@ -1,5 +1,6 @@
 package communication
 
+/*
 import (
 	"encoding/json"
 	"fmt"
@@ -51,3 +52,4 @@ func (c *HttpInput) serve() {
 	fmt.Printf("Http server started on %v\n", 7632)
 	http.ListenAndServe(":7632", nil)
 }
+*/

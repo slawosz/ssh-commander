@@ -14,12 +14,9 @@ type Host struct {
 	Exit     string
 }
 
-type JobPayload struct {
-	Hosts   []*Host
-	Script  string
-	Command string
-	JID     string
-	Timeout int
+type SchedulerPayload struct {
+	Hosts       []*Host
+	ResultsChan chan []*HostResult
 }
 
 type HostResult struct {
@@ -27,9 +24,4 @@ type HostResult struct {
 	Host    string
 	Port    string
 	Status  string
-}
-
-type HostsResult struct {
-	JID         string
-	HostsResult []*HostResult
 }

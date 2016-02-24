@@ -1,26 +1,28 @@
 package main
 
 import (
-	"communication"
-	"worker"
+//"communication"
+//"worker"
 )
 
 func main() {
-	// initialize work channel
-	inputCh := make(chan []*worker.Host)
+	/*
+		// initialize work channel
+		inputCh := make(chan []*worker.Host)
 
-	// create worker and scheduler
-	w := worker.NewExpectWorker()
-	scheduler := worker.NewScheduler(w, inputCh, 20)
+		// create worker and scheduler
+		w := worker.NewExpectWorker()
+		scheduler := worker.NewScheduler(w, inputCh, 20)
 
-	// make communication
-	in := communication.NewHttpInput(inputCh)
+		// make communication
+		in := communication.NewHttpInput(inputCh)
 
-	go func() { in.StartInput() }()
+		go func() { in.StartInput() }()
 
-	out := communication.NewStdoutOut(scheduler.ResultsChan())
+		out := communication.NewStdoutOut(scheduler.ResultsChan())
 
-	go func() { out.StartOut() }()
-	// start scheduler
-	scheduler.Start()
+		go func() { out.StartOut() }()
+		// start scheduler
+		scheduler.Start()
+	*/
 }
