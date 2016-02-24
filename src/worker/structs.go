@@ -1,7 +1,7 @@
 package worker
 
 type Worker interface {
-	Work(*WorkerPayload) *HostResult
+	Work(*Host) *HostResult
 }
 
 type Host struct {
@@ -9,6 +9,9 @@ type Host struct {
 	Port     string
 	User     string
 	Password string
+	Commands []string
+	Prompt   string
+	Exit     string
 }
 
 type JobPayload struct {
@@ -17,13 +20,6 @@ type JobPayload struct {
 	Command string
 	JID     string
 	Timeout int
-}
-
-type WorkerPayload struct {
-	*Host
-	Commands string
-	Script   string
-	Prompt   string
 }
 
 type HostResult struct {

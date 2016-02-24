@@ -11,36 +11,37 @@ type JobScheduler interface {
 }
 
 type Scheduler struct {
-	chanin  chan *JobPayload
+	chanin  chan []*Host
 	chanout chan *HostsResult
-	pool    int
 	worker  Worker
+	pool    int
 }
 
-func NewScheduler(w Worker, in chan *JobPayload, pool int) *Scheduler {
+func NewScheduler(w Worker, in chan []*Host, pool int) *Scheduler {
 	return &Scheduler{
 		chanin:  in,
 		chanout: make(chan *HostsResult),
 		worker:  w,
+		pool:    pool,
 	}
 }
 
-func (s *Scheduler) Start(pool int) {
-	limiter := make(chan bool, pool)
+func (s *Scheduler) Start() {
+	limiter := make(chan bool, s.pool)
 
 	for job := range s.chanin {
 
-		go func(j *JobPayload) {
+		go func(j []*Host) {
+			// waitGroup is to wait until all hosts will do their job
 			wg := &sync.WaitGroup{}
-			workerResults := make(chan *HostResult, len(j.Hosts))
+			workerResults := make(chan *HostResult, len(j))
 
-			for _, hostPayload := range j.Hosts {
+			for _, hostPayload := range j {
 				wg.Add(1)
 				limiter <- true // blocks when limiter chan buffer is full
 
 				go func(hostPayload *Host) {
-					w := &WorkerPayload{Host: hostPayload, Commands: j.Command, Script: j.Script}
-					res := s.worker.Work(w)
+					res := s.worker.Work(hostPayload)
 					workerResults <- res
 
 					<-limiter //release place in channel
@@ -48,6 +49,7 @@ func (s *Scheduler) Start(pool int) {
 				}(hostPayload)
 			}
 			wg.Wait()
+
 			close(workerResults) // TODO: test if without it reduce blocks
 			hostsResult := make([]*HostResult, 0)
 
@@ -56,7 +58,6 @@ func (s *Scheduler) Start(pool int) {
 			}
 
 			res := &HostsResult{
-				JID:         j.JID,
 				HostsResult: hostsResult,
 			}
 			s.chanout <- res
@@ -64,7 +65,7 @@ func (s *Scheduler) Start(pool int) {
 	}
 }
 
-func (s *Scheduler) PushJob(j *JobPayload) {
+func (s *Scheduler) PushJob(j []*Host) {
 	s.chanin <- j
 }
 

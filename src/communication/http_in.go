@@ -14,10 +14,10 @@ type Payload struct {
 }
 
 type HttpInput struct {
-	inchan chan *worker.JobPayload
+	inchan chan []*worker.Host
 }
 
-func NewHttpInput(in chan *worker.JobPayload) *HttpInput {
+func NewHttpInput(in chan []*worker.Host) *HttpInput {
 	return &HttpInput{in}
 }
 
@@ -35,16 +35,18 @@ func (c *HttpInput) serve() {
 			w.WriteHeader(http.StatusBadRequest)
 		}
 
-		payload := &Payload{}
-		err = json.Unmarshal(body, payload)
+		var payload []*worker.Host
+		err = json.Unmarshal(body, &payload)
 		if err != nil {
+			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
-		go func() { c.inchan <- payload.JobPayload }()
+		go func() { c.inchan <- payload }()
 		w.WriteHeader(http.StatusAccepted)
 	}
-	http.HandleFunc("/new_job", handler)
+	http.HandleFunc("/run", handler)
 
 	fmt.Printf("Http server started on %v\n", 7632)
 	http.ListenAndServe(":7632", nil)

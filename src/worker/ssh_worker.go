@@ -1,5 +1,6 @@
 package worker
 
+/*
 import (
 	"bytes"
 	"fmt"
@@ -60,3 +61,4 @@ func (w *SshWorker) Work(payload *WorkerPayload) *HostResult {
 func (w *SshWorker) handleError(payload *WorkerPayload, msg string, err error) *HostResult {
 	return &HostResult{fmt.Sprintf("Execution on host FAILED \"%v\" with error \"%v\"", msg, err), payload.Host.Host, payload.Port, "-1"}
 }
+*/

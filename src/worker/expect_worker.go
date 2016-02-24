@@ -15,7 +15,7 @@ func NewExpectWorker() *ExpectWorker {
 	return &ExpectWorker{}
 }
 
-func (w *ExpectWorker) Work(p *WorkerPayload) *HostResult {
+func (w *ExpectWorker) Work(p *Host) *HostResult {
 	flag.Parse()
 	cmd := exec.Command("/usr/bin/expect")
 	in, err := cmd.StdinPipe()
@@ -46,12 +46,15 @@ func (w *ExpectWorker) Work(p *WorkerPayload) *HostResult {
 		io.Copy(in, bytes.NewBuffer(line))
 	}
 	in.Close()
+
 	if err != nil {
 		fmt.Printf("error in output:")
 		fmt.Println(err)
 	}
+
 	io.Copy(output, stdout)
 	io.Copy(output, stderr)
+
 	err = cmd.Wait()
 	if err != nil {
 		switch err.(type) {
@@ -63,22 +66,21 @@ func (w *ExpectWorker) Work(p *WorkerPayload) *HostResult {
 		}
 	}
 
-	return &HostResult{Payload: output.String(), Port: p.Port, Host: p.Host.Host}
+	return &HostResult{Payload: output.String(), Port: p.Port, Host: p.Host}
 }
 
 // TODO: it should be possible to generate expect for debug
-func generateScript(p *WorkerPayload) [][]byte {
-	cmdsStr := strings.Split(p.Commands, ",")
+func generateScript(p *Host) [][]byte {
 	cmds := [][]byte{
 		[]byte("set timeout 10\n"),
-		[]byte(fmt.Sprintf("spawn ssh -StrictHostKeyChecking=no -p %v %v@%v\n", p.Port, p.User, p.Host.Host)),
+		[]byte(fmt.Sprintf("spawn ssh -o StrictHostKeyChecking=no -p %v %v@%v\n", p.Port, p.User, p.Host)),
 		[]byte("expect \"*?assword: \"\n"),
 		// escape any $ in password for expect
 		[]byte(fmt.Sprintf("send -- \"%v\r\"\n", strings.Replace(p.Password, "$", "\\$", -1))),
 		[]byte(fmt.Sprintf("expect \"*?%v \"\n", p.Prompt)),
-		[]byte("send -- \"ls\r\"\n"),
+		// []byte("send -- \"ls\r\"\n"), // WTF?
 	}
-	for _, cmd := range cmdsStr {
+	for _, cmd := range p.Commands {
 		cmds = append(cmds, []byte(fmt.Sprintf("send -- \"%v\r\"\n", cmd)))
 		cmds = append(cmds, []byte("expect \"*?$ \"\n"))
 	}

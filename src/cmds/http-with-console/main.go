@@ -6,13 +6,21 @@ import (
 )
 
 func main() {
-	w := worker.NewCmdWorker()
-	input := make(chan *worker.JobPayload)
-	scheduler := worker.NewScheduler(w, input, 2000)
+	// initialize work channel
+	inputCh := make(chan []*worker.Host)
 
-	in := communication.NewHttpInput(input)
+	// create worker and scheduler
+	w := worker.NewExpectWorker()
+	scheduler := worker.NewScheduler(w, inputCh, 20)
+
+	// make communication
+	in := communication.NewHttpInput(inputCh)
+
 	go func() { in.StartInput() }()
+
 	out := communication.NewStdoutOut(scheduler.ResultsChan())
+
 	go func() { out.StartOut() }()
+	// start scheduler
 	scheduler.Start()
 }
