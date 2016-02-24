@@ -4,12 +4,6 @@ type Worker interface {
 	Work(*WorkerPayload) *HostResult
 }
 
-type IScheduler interface {
-	Start()
-	Push(*JobPayload)
-	ResultsChan() chan *HostsResult
-}
-
 type Host struct {
 	Host     string
 	Port     string
