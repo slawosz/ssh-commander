@@ -1,94 +1,67 @@
 package communication
 
-/*
-
 import (
-	"bytes"
 	"encoding/json"
+	"fmt"
+	"github.com/elazarl/go-bindata-assetfs"
 	"io/ioutil"
 	"net/http"
-	"sync"
 	"worker"
 )
 
-type Payload struct {
-	CallbackUrl string
-	*worker.JobPayload
+type Http struct {
+	scheduler worker.JobScheduler
 }
 
-type HttpCommunication struct {
-	jobs      map[string]string // JID => callback url
-	scheduler worker.IScheduler
-	*sync.Mutex
-}
-
-func NewHttpCommunication(s worker.IScheduler) *HttpCommunication {
-	return &HttpCommunication{
-		jobs:      make(map[string]string),
-		scheduler: s,
+func NewHttp(scheduler worker.JobScheduler) *Http {
+	return &Http{
+		scheduler: scheduler,
 	}
 }
 
-func (c HttpCommunication) Start(s worker.IScheduler) {
-	go func() {
-		for res := range c.scheduler.ResultsChan() {
-			go c.sendBackResults(res)
-		}
-	}()
-
-	go func() {
-		c.scheduler.Start()
-	}()
-
-	go c.serve()
-
-	sleep := make(chan bool)
-	sleep <- true
-}
-
-func (c *HttpCommunication) serve() {
+func (h *Http) Start() {
 	handler := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "accept, content-type")
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method != "POST" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
+			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
-		payload := &Payload{}
-		err = json.Unmarshal(body, payload)
+		var payload []*worker.Host
+		err = json.Unmarshal(body, &payload)
 		if err != nil {
+			fmt.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 
-		c.scheduler.Push(payload.JobPayload)
-		c.Lock()
-		c.jobs[payload.JobPayload.JID] = payload.CallbackUrl
-		c.Unlock()
-		w.WriteHeader(http.StatusAccepted)
-	}
-	http.HandleFunc("/new_job", handler)
+		resCh := make(chan []*worker.HostResult)
+		h.scheduler.PushJob(&worker.SchedulerPayload{Hosts: payload, ResultsChan: resCh})
+		res := <-resCh
+		b, err := json.Marshal(res)
+		if err != nil {
+			fmt.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		fmt.Fprintf(w, "%v", string(b))
 
-	http.ListenAndServe(":8080", nil)
+		w.WriteHeader(http.StatusOK)
+	}
+	http.HandleFunc("/run", handler)
+	http.Handle("/",
+		http.FileServer(
+			&assetfs.AssetFS{Asset: Asset, AssetDir: AssetDir, AssetInfo: AssetInfo, Prefix: "src/assets"}))
+
+	fmt.Printf("Http server started on %v\n", 7632)
+	http.ListenAndServe(":3002", nil)
 }
-
-func (c *HttpCommunication) sendBackResults(res *worker.HostsResult) {
-	body, err := json.Marshal(res)
-	bodybuf := bytes.NewBuffer(body)
-	if err != nil {
-		// log error
-		return
-	}
-
-	url, ok := c.jobs[res.JID]
-	if !ok {
-		// log error, not such job
-		return
-	}
-	http.Post(url, "application/json", bodybuf)
-	if err != nil {
-		// log error
-	}
-	c.Lock()
-	delete(c.jobs, res.JID)
-	c.Unlock()
-}
-*/

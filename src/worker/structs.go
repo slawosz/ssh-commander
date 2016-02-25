@@ -1,13 +1,7 @@
 package worker
 
 type Worker interface {
-	Work(*WorkerPayload) *HostResult
-}
-
-type IScheduler interface {
-	Start()
-	Push(*JobPayload)
-	ResultsChan() chan *HostsResult
+	Work(*Host) *HostResult
 }
 
 type Host struct {
@@ -15,20 +9,14 @@ type Host struct {
 	Port     string
 	User     string
 	Password string
+	Commands []string
+	Prompt   string
+	Exit     string
 }
 
-type JobPayload struct {
-	Hosts   []*Host
-	Script  string
-	Command string
-	JID     string
-	Timeout int
-}
-
-type WorkerPayload struct {
-	*Host
-	Command string
-	Script  string
+type SchedulerPayload struct {
+	Hosts       []*Host
+	ResultsChan chan []*HostResult
 }
 
 type HostResult struct {
@@ -36,9 +24,4 @@ type HostResult struct {
 	Host    string
 	Port    string
 	Status  string
-}
-
-type HostsResult struct {
-	JID         string
-	HostsResult []*HostResult
 }

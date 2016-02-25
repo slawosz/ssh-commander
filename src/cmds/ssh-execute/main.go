@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"strings"
 	"worker"
 )
 
@@ -10,28 +12,25 @@ var host = flag.String("host", "localhost", "host to connect")
 var port = flag.String("port", "2222", "port to connect")
 var user = flag.String("user", "vagrant", "user")
 var password = flag.String("password", "vagrant", "password")
-var command = flag.String("command", "uname -a", "command to run")
-var script = flag.String("script", "ssh.sh", "script to run")
-var timeout = flag.Int("timeout", 5, "command timeout")
+var commands = flag.String("commands", "ls", "commands to execute")
+var prompt = flag.String("prompt", "$", "prompt sign")
+var exit = flag.String("exit", "exit", "exit command")
+
+//var timeout = flag.Int("timeout", 5, "command timeout")
 
 func main() {
 	flag.Parse()
-
-	w := worker.NewCmdWorker()
-	payload := prepareWorkerPayload()
-	res := w.Work(payload)
-	fmt.Printf("Result:\n%+v\n", res)
-}
-
-func prepareWorkerPayload() *worker.WorkerPayload {
-	return &worker.WorkerPayload{
-		Host: &worker.Host{
-			Host:     *host,
-			Port:     *port,
-			User:     *user,
-			Password: *password,
-		},
-		Command: *command,
-		Script:  *script,
+	p := &worker.Host{
+		User:     *user,
+		Password: *password,
+		Host:     *host,
+		Port:     *port,
+		Prompt:   *prompt,
+		Exit:     *exit,
+		Commands: strings.Split(*commands, ","),
 	}
+	b, _ := json.Marshal(p)
+	fmt.Println(string(b))
+	w := worker.NewExpectWorker()
+	fmt.Println(w.Work(p).Payload)
 }

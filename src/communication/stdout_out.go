@@ -1,5 +1,7 @@
 package communication
 
+/*
+
 import (
 	"fmt"
 	"time"
@@ -25,3 +27,4 @@ func (s *StdoutOut) StartOut() {
 		fmt.Printf("----\n")
 	}
 }
+*/
